@@ -148,14 +148,13 @@ public class IdentitySubstitutionMap implements SubstitutionMap {
   @Override
   public String get(String key) {
     try {
-      //System.out.println(engine.eval("require('conditional').checkNotNull('hi')"));
-      System.out.println(engine.eval("(() => { const Map = require('./identity-substitution-map'); return new Map().get('foo') })()"));
-      //System.out.println(engine.eval("new Hello().get('" + key + "')"));
-      //System.out.println(engine.eval("require('./identity-substitution-map')();"));
+      engine.put("key", key);
+      return engine.eval("(() => { const Map = require('./identity-substitution-map'); return new Map().get(key) })()").toString();
     } catch (ScriptException e) {
+      if (e.getMessage().contains("value is null")) {
+        throw new NullPointerException();
+      }
       throw new RuntimeException("Eval failed", e);
     }
-    Preconditions.checkNotNull(key);
-    return key;
   }
 }
