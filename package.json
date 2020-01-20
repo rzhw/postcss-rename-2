@@ -1,0 +1,18 @@
+{
+  "name": "closure-stylesheets-ts",
+  "version": "0.0.0",
+  "description": "TypeScript port of Closure Stylesheets",
+  "dependencies": {
+    "@babel/cli": "^7.6.0",
+    "@babel/core": "^7.6.0",
+    "@babel/preset-env": "^7.6.0",
+    "@types/conditional": "file:typings/conditional",
+    "@types/node": "^12.12.7",
+    "conditional": "^5.3.0",
+    "immutable": "^4.0.0-rc.12",
+    "typescript": "^3.7.2"
+  },
+  "devDependencies": {
+    "@bazel/typescript": "^1.0.1"
+  }
+}

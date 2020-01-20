@@ -14,6 +14,9 @@
 
 licenses(["notice"])  # Apache 2.0
 
+load("@npm_bazel_typescript//:index.bzl", "ts_library")
+load("@build_bazel_rules_nodejs//:index.bzl", "npm_package_bin")
+
 java_library(
     name = "css",
     srcs = [
@@ -44,9 +47,53 @@ java_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "@maven//:com_coveo_nashorn_commonjs_modules",
         "@maven//:com_google_auto_value_auto_value",
         "@maven//:com_google_code_findbugs_jsr305",
         "@maven//:com_google_code_gson_gson",
         "@maven//:com_google_guava_guava",
+    ],
+    resources = [
+        ":css_js",
+        "@npm//conditional",
+    ]
+)
+
+ts_library(
+    name = "css_ts",
+    srcs = [
+        "identity-substitution-map.ts",
+        "substitution-map.ts",
+    ],
+    deps = [
+      "@npm//@types",
+      "@npm//conditional",
+      "@npm//immutable",
+    ],
+)
+
+filegroup(
+    name = "css_ts_js",
+    srcs = [":css_ts"],
+    output_group = "es5_sources",
+)
+
+npm_package_bin(
+    name = "css_js",
+    tool = "@npm//@babel/cli/bin:babel",
+    outs = [
+        "lol/identity-substitution-map.js",
+        "lol/substitution-map.js"
+    ],
+    data = [
+        ":css_ts_js",
+        "@npm//@babel/preset-env",
+    ],
+    args = [
+        "$(execpaths :css_ts_js)",
+        "--no-babelrc",
+        "--presets=@babel/preset-env",
+        "--out-dir",
+        "$(execpath :lol/identity-substitution-map.js)/.."
     ],
 )
