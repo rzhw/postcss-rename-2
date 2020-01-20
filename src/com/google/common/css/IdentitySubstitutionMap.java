@@ -91,21 +91,22 @@ public class IdentitySubstitutionMap implements SubstitutionMap {
     public String getFile(String name) {
       String path = resourcePath + "/" + name;
       System.out.println("getFile " + path);
+      if (path.contains("debug/node.js")) {
+        System.out.println("debug shim");
+        return "module.exports = (module_name) => ((message) => {});";
+      }
       InputStream stream = loader.getResourceAsStream(resourcePath + "/" + name);
       if (stream == null) {
         System.out.println("not found!");
-        if (path.contains("tty/index.js")) {
-          System.out.println("tty shim");
-          return "module.exports = {isatty: () => false}";
-        }
-        if (path.contains("util/index.js")) {
-          System.out.println("util shim");
-          return "module.exports = {format: () => '', inspect: () => ''}";
-        }
         return null;
       }
 
-      return new BufferedReader(new InputStreamReader(stream)).lines().collect(Collectors.joining("\n"));
+      String result = new BufferedReader(new InputStreamReader(stream)).lines().collect(Collectors.joining("\n"));
+      if (path.contains("identity-substitution-map.js")) {
+        result = result.replace("_interopRequireDefault(require(\"conditional\"))", "require('conditional')");
+        result += "\nmodule.exports = IdentitySubstitutionMap;";
+      }
+      return result;
     }
 
     @Override
@@ -147,7 +148,10 @@ public class IdentitySubstitutionMap implements SubstitutionMap {
   @Override
   public String get(String key) {
     try {
-      engine.eval("require('./identity-substitution-map')().get(\"" + key + "\")");
+      //System.out.println(engine.eval("require('conditional').checkNotNull('hi')"));
+      System.out.println(engine.eval("(() => { const Map = require('./identity-substitution-map'); return new Map().get('foo') })()"));
+      //System.out.println(engine.eval("new Hello().get('" + key + "')"));
+      //System.out.println(engine.eval("require('./identity-substitution-map')();"));
     } catch (ScriptException e) {
       throw new RuntimeException("Eval failed", e);
     }

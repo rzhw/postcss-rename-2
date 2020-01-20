@@ -75,7 +75,7 @@ ts_library(
 filegroup(
     name = "css_ts_js",
     srcs = [":css_ts"],
-    output_group = "es5_sources",
+    output_group = "es6_sources",
 )
 
 npm_package_bin(
