@@ -19,69 +19,21 @@ package com.google.common.css;
 import com.coveo.nashorn_modules.AbstractFolder;
 import com.coveo.nashorn_modules.Folder;
 import com.coveo.nashorn_modules.Require;
-import com.coveo.nashorn_modules.ResourceFolder;
-import com.google.common.base.Preconditions;
 import jdk.nashorn.api.scripting.NashornScriptEngine;
 
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.stream.Collectors;
 
 /**
- * {@link IdentitySubstitutionMap} is a trivial implementation of
- * {@link SubstitutionMap} that returns the key as the value for the requested
- * key.
- *
- * @author bolinfest@google.com (Michael Bolin)
+ * Wrapper around JavaScript version of IdentitySubstitutionMap.
  */
 public class IdentitySubstitutionMap implements SubstitutionMap {
 
   public static class DataFolder extends AbstractFolder {
-    /*ResourceFolder rootDelegate;
-    ResourceFolder nodeModulesDelegate;
-
-    public DataFolder() {
-      rootDelegate = ResourceFolder.create(getClass().getClassLoader(), "com/google/common/css/lol", "UTF-8");
-      nodeModulesDelegate = ResourceFolder.create(getClass().getClassLoader(), "external/npm/node_modules", "UTF-8");
-    }
-
-    public String getFile(String name) {
-      if (name.contains("node_modules")) {
-        throw new RuntimeException("boo " + name);
-      }
-      return rootDelegate.getFile(name);
-    }
-
-    public Folder getFolder(String name) {
-      if (name.endsWith("node_modules")) {
-        InputStream stream = getClass().getClassLoader().getResourceAsStream("external/npm/node_modules/conditional/node_modules/debug/node_modules/ms/node_modules/conditional/lib/util.js");
-        if (stream == null) {
-          return null;
-        }
-
-        //try {
-        //  throw new RuntimeException("hello"+new BufferedReader(new InputStreamReader(stream))
-        //          .lines().collect(Collectors.joining("\n")));
-        //} catch (IOException ex) {
-        //  return null;
-        //}
-        return nodeModulesDelegate.getFolder(name);
-      }
-      return rootDelegate.getFolder(name);
-    }
-
-    public Folder getParent() {
-      return null;
-    }
-
-    public String getPath() {
-      return "/";
-    }*/
-
 
     private ClassLoader loader;
     private String resourcePath;
@@ -90,14 +42,11 @@ public class IdentitySubstitutionMap implements SubstitutionMap {
     @Override
     public String getFile(String name) {
       String path = resourcePath + "/" + name;
-      System.out.println("getFile " + path);
       if (path.contains("debug/node.js")) {
-        System.out.println("debug shim");
         return "module.exports = (module_name) => ((message) => {});";
       }
       InputStream stream = loader.getResourceAsStream(resourcePath + "/" + name);
       if (stream == null) {
-        System.out.println("not found!");
         return null;
       }
 
@@ -111,7 +60,6 @@ public class IdentitySubstitutionMap implements SubstitutionMap {
 
     @Override
     public Folder getFolder(String name) {
-      System.out.println("getFolder " + (resourcePath + "/" + name));
       if (name.contains("node_modules") && getParent() == null) {
         return new DataFolder(
                 loader, "external/npm/node_modules/conditional/node_modules/debug/node_modules/ms/node_modules", null, getPath() + name + "/", encoding);
