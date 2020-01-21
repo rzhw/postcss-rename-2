@@ -78,6 +78,7 @@ java_library(
     resources = [
         ":css_js",
         "@npm//conditional",
+        "@npm//guava-js",
         "@npm//immutable",
     ]
 )
@@ -85,16 +86,19 @@ java_library(
 ts_library(
     name = "css_ts",
     srcs = [
+        "guavajs-wrapper.d.ts",
         "identity-substitution-map.ts",
         "minimal-substitution-map.ts",
         "multiple-mapping-substitution-map.ts",
         "prefixing-substitution-map.ts",
         "simple-substitution-map.ts",
+        "splitting-substitution-map.ts",
         "substitution-map.ts",
     ],
     deps = [
       "@npm//@types",
       "@npm//conditional",
+      "@npm//guava-js",
       "@npm//immutable",
     ],
 )
@@ -114,6 +118,7 @@ npm_package_bin(
         "lol/multiple-mapping-substitution-map.js",
         "lol/prefixing-substitution-map.js",
         "lol/simple-substitution-map.js",
+        "lol/splitting-substitution-map.js",
         "lol/substitution-map.js"
     ],
     data = [

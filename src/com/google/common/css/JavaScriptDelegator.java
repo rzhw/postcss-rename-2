@@ -195,8 +195,17 @@ public class JavaScriptDelegator {
         return "module.exports = (module_name) => ((message) => {});";
       }
 
-      InputStream stream = loader.getResourceAsStream(resourcePath + "/" + name);
-      if (stream == null) {
+      // An alternative guava-js wrapper, since we don't have fs:
+      // https://github.com/rzhw/postcss-rename/blob/e3f6b7455f7e0ed0dbef13d6bd476f4927ae2e84/css/guavajs-wrapper.js
+      if (path.contains("guavajs-wrapper.js")) {
+        String part1 = getResource("main/javascript/GuavaJS.js");
+        String part2 = getResource("main/javascript/GuavaJS.strings.js");
+        String part3 = getResource("main/javascript/GuavaJS.strings.charmatcher.js");
+        String part4 = getResource("main/javascript/GuavaJS.strings.splitter.js");
+        String result = part1 + part2 + part3 + part4 + "\nmodule.exports = GuavaJS;";
+        return result;
+      }
+
       String result = getResource(path);
       if (result == null) {
         //System.out.println("couldn't find " + path);
@@ -204,6 +213,7 @@ public class JavaScriptDelegator {
       }
 
       // Node.js requires shouldn't be using the Babel-generated format.
+      result = result.replace("_interopRequireDefault(require(\"./guavajs-wrapper\"))", "require('./guavajs-wrapper')");
       result = result.replace("_interopRequireDefault(require(\"conditional\"))", "require('conditional')");
       result = result.replace("_interopRequireDefault(require(\"immutable\"))", "require('immutable')");
 

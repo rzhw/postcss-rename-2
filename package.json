@@ -9,6 +9,7 @@
     "@types/conditional": "file:typings/conditional",
     "@types/node": "^12.12.7",
     "conditional": "^5.3.0",
+    "guava-js": "github:nerdynick/guava-js#2811ba397343f945e811239dfa7e040eeb44db99",
     "immutable": "^4.0.0-rc.12",
     "typescript": "^3.7.2"
   },
