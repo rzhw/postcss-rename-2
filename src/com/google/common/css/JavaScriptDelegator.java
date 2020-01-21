@@ -17,41 +17,43 @@ import java.util.stream.Collectors;
 
 public class JavaScriptDelegator {
 
-  private NashornScriptEngine engine;
+  private static NashornScriptEngine engine;
   private String mainModule;
   private String mainImportName;
+  private Object delegatedMap;
 
   public JavaScriptDelegator(String mainModule, String mainImportName) {
     this.mainModule = mainModule;
     this.mainImportName = mainImportName;
 
-    System.setProperty("nashorn.args", "--language=es6");
-    NashornScriptEngine engine = (NashornScriptEngine) new ScriptEngineManager().getEngineByName("nashorn");
-    try {
-      // console doesn't exist.
-      engine.eval("console = { log: print, warn: print, error: print }");
+    if (engine == null) {
+      System.setProperty("nashorn.args", "--language=es6");
+      engine = (NashornScriptEngine) new ScriptEngineManager().getEngineByName("nashorn");
+      try {
+        // console doesn't exist.
+        engine.eval("console = { log: print, warn: print, error: print }");
 
-      // Number.isInteger doesn't exist.
-      engine.eval("" +
-              "Number.isInteger = Number.isInteger || function(value) {\n" +
-              "  return typeof value === 'number' && \n" +
-              "    isFinite(value) && \n" +
-              "    Math.floor(value) === value;\n" +
-              "}");
-    } catch (ScriptException e) {
-      throw new RuntimeException("Couldn't initialize polyfills", e);
+        // Number.isInteger doesn't exist.
+        engine.eval("" +
+                "Number.isInteger = Number.isInteger || function(value) {\n" +
+                "  return typeof value === 'number' && \n" +
+                "    isFinite(value) && \n" +
+                "    Math.floor(value) === value;\n" +
+                "}");
+      } catch (ScriptException e) {
+        throw new RuntimeException("Couldn't initialize polyfills", e);
+      }
+      try {
+        Require.enable(engine, createRootFolder("com/google/common/css/lol", "UTF-8"));
+      } catch (ScriptException e) {
+        throw new RuntimeException("Couldn't initialize nashorn-commonjs-modules", e);
+      }
     }
-    try {
-      Require.enable(engine, createRootFolder("com/google/common/css/lol", "UTF-8"));
-    } catch (ScriptException e) {
-      throw new RuntimeException("Couldn't initialize nashorn-commonjs-modules", e);
-    };
-    this.engine = engine;
   }
 
   public void initialize() {
     try {
-      engine.eval("const delegatedMap = (() => { const Map = require('./" + mainImportName + "'); return new Map() })()");
+      delegatedMap = engine.eval("(() => { const Map = require('./" + mainImportName + "'); return new Map() })()");
     } catch (ScriptException e) {
       throw new RuntimeException("Couldn't initialize " + mainModule, e);
     }
@@ -60,7 +62,7 @@ public class JavaScriptDelegator {
   public void initialize(Object arg1) {
     try {
       engine.put("arg1", arg1);
-      engine.eval("const delegatedMap = (() => { const Map = require('./" + mainImportName + "'); return new Map(Java.from(arg1)) })()");
+      delegatedMap = engine.eval("(() => { const Map = require('./" + mainImportName + "'); return new Map(Java.from(arg1)) })()");
     } catch (ScriptException e) {
       throw new RuntimeException("Couldn't initialize " + mainModule, e);
     }
@@ -78,7 +80,7 @@ public class JavaScriptDelegator {
       if (arg2 instanceof List) {
         arg2Import = "Java.from(arg2)";
       }
-      engine.eval("const delegatedMap = (() => { const Map = require('./" + mainImportName + "'); return new Map("+arg1Import+", "+arg2Import+") })()");
+      delegatedMap = engine.eval("(() => { const Map = require('./" + mainImportName + "'); return new Map("+arg1Import+", "+arg2Import+") })()");
     } catch (ScriptException e) {
       throw new RuntimeException("Couldn't initialize " + mainModule, e);
     }
@@ -89,7 +91,7 @@ public class JavaScriptDelegator {
       engine.put("arg1", arg1);
       engine.put("arg2", arg2);
       engine.put("arg3", arg3);
-      engine.eval("const delegatedMap = (() => { const Map = require('./" + mainImportName + "'); return new Map(Java.from(arg1), Java.from(arg2), Java.from(arg3)) })()");
+      delegatedMap = engine.eval("(() => { const Map = require('./" + mainImportName + "'); return new Map(Java.from(arg1), Java.from(arg2), Java.from(arg3)) })()");
     } catch (ScriptException e) {
       throw new RuntimeException("Couldn't initialize " + mainModule, e);
     }
@@ -105,6 +107,7 @@ public class JavaScriptDelegator {
 
   public void substitutionMapInitializableInitializeWithMappings(Map<? extends String, ? extends String> initialMappings) {
     try {
+      engine.put("delegatedMap", delegatedMap);
       // immutable.Map expects a JavaScript Object, so we need to pre-convert.
       engine.put("initialMappings", initialMappings);
       engine.eval("(() => {" +
@@ -121,6 +124,7 @@ public class JavaScriptDelegator {
 
   public ValueWithMappings multipleMappingSubstitutionMapGetValueWithMappings(String key) {
     try {
+      engine.put("delegatedMap", delegatedMap);
       engine.put("key", key);
       return (ValueWithMappings) engine.eval("(() => {" +
         "const HashMap = Java.type('java.util.HashMap');" +
@@ -139,6 +143,7 @@ public class JavaScriptDelegator {
 
   public Object executeObject(String method, Object ...args) {
     try {
+      engine.put("delegatedMap", delegatedMap);
       engine.put("args", args);
       return engine.eval("delegatedMap." + method + ".apply(delegatedMap, args)");
     } catch (ScriptException e) {
