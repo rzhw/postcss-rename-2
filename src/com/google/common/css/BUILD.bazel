@@ -87,6 +87,8 @@ ts_library(
     srcs = [
         "identity-substitution-map.ts",
         "minimal-substitution-map.ts",
+        "multiple-mapping-substitution-map.ts",
+        "prefixing-substitution-map.ts",
         "substitution-map.ts",
     ],
     deps = [
@@ -108,6 +110,8 @@ npm_package_bin(
     outs = [
         "lol/identity-substitution-map.js",
         "lol/minimal-substitution-map.js",
+        "lol/multiple-mapping-substitution-map.js",
+        "lol/prefixing-substitution-map.js",
         "lol/substitution-map.js"
     ],
     data = [

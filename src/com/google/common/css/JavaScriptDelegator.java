@@ -3,6 +3,7 @@ package com.google.common.css;
 import com.coveo.nashorn_modules.AbstractFolder;
 import com.coveo.nashorn_modules.Folder;
 import com.coveo.nashorn_modules.Require;
+import com.google.common.css.MultipleMappingSubstitutionMap.ValueWithMappings;
 import jdk.nashorn.api.scripting.NashornScriptEngine;
 
 import javax.script.ScriptEngineManager;
@@ -10,6 +11,7 @@ import javax.script.ScriptException;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -68,7 +70,15 @@ public class JavaScriptDelegator {
     try {
       engine.put("arg1", arg1);
       engine.put("arg2", arg2);
-      engine.eval("const delegatedMap = (() => { const Map = require('./" + mainImportName + "'); return new Map(Java.from(arg1), Java.from(arg2)) })()");
+      String arg1Import = "arg1";
+      if (arg1 instanceof List) {
+        arg1Import = "Java.from(arg1)";
+      }
+      String arg2Import = "arg2";
+      if (arg2 instanceof List) {
+        arg2Import = "Java.from(arg2)";
+      }
+      engine.eval("const delegatedMap = (() => { const Map = require('./" + mainImportName + "'); return new Map("+arg1Import+", "+arg2Import+") })()");
     } catch (ScriptException e) {
       throw new RuntimeException("Couldn't initialize " + mainModule, e);
     }
@@ -101,6 +111,24 @@ public class JavaScriptDelegator {
         "const immutable = require('immutable');" +
         "const map = {}; for each (let i in initialMappings.keySet()) { map[i] = initialMappings.get(i) };" +
         "delegatedMap.initializeWithMappings(immutable.Map(map)) })()");
+    } catch (ScriptException e) {
+      if (e.getMessage().contains("value is null")) {
+        throw new NullPointerException();
+      }
+      throw new RuntimeException("Eval failed", e);
+    }
+  }
+
+  public ValueWithMappings multipleMappingSubstitutionMapGetValueWithMappings(String key) {
+    try {
+      engine.put("key", key);
+      return (ValueWithMappings) engine.eval("(() => {" +
+        "const HashMap = Java.type('java.util.HashMap');" +
+        "const JavaValueWithMappings = Java.type('com.google.common.css.MultipleMappingSubstitutionMap.ValueWithMappings');" +
+        "const jsValueWithMappings = delegatedMap.getValueWithMappings(key);" +
+        "const map = new HashMap();" +
+        "jsValueWithMappings.mappings.forEach((value, key) => map.put(key, value));" +
+        "return new JavaValueWithMappings(jsValueWithMappings.value, map) })()");
     } catch (ScriptException e) {
       if (e.getMessage().contains("value is null")) {
         throw new NullPointerException();

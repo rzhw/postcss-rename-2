@@ -27,35 +27,27 @@ public class PrefixingSubstitutionMap
     implements MultipleMappingSubstitutionMap, SubstitutionMap.Initializable {
   private final SubstitutionMap delegate;
   private final String prefix;
+  JavaScriptDelegator delegator;
 
   public PrefixingSubstitutionMap(SubstitutionMap delegate, String prefix) {
     this.delegate = delegate;
     this.prefix = prefix;
+    delegator = new JavaScriptDelegator("PrefixingSubstitutionMap", "prefixing-substitution-map");
+    delegator.initialize(delegate, prefix);
   }
 
   @Override
   public void initializeWithMappings(Map<? extends String, ? extends String> newMappings) {
-    if (!newMappings.isEmpty()) {
-      // We don't need to remove prefixes from mapping values because the mappings
-      // returned by getValueWithMappings are not prefixed.
-      ((SubstitutionMap.Initializable) delegate).initializeWithMappings(newMappings);
-    }
+    delegator.substitutionMapInitializableInitializeWithMappings(newMappings);
   }
 
   @Override
   public String get(String key) {
-    return prefix + delegate.get(key);
+    return delegator.substitutionMapGet(key);
   }
 
   @Override
   public ValueWithMappings getValueWithMappings(String key) {
-    if (delegate instanceof MultipleMappingSubstitutionMap) {
-      ValueWithMappings withoutPrefix =
-          ((MultipleMappingSubstitutionMap) delegate).getValueWithMappings(key);
-      return ValueWithMappings.createWithValueAndMappings(
-          prefix + withoutPrefix.value, withoutPrefix.mappings);
-    } else {
-      return ValueWithMappings.createForSingleMapping(key, get(key));
-    }
+    return delegator.multipleMappingSubstitutionMapGetValueWithMappings(key);
   }
 }
