@@ -66,6 +66,7 @@ java_library(
     resources = [
         ":css_js",
         "@npm//conditional",
+        "@npm//immutable",
     ]
 )
 
@@ -73,6 +74,7 @@ ts_library(
     name = "css_ts",
     srcs = [
         "identity-substitution-map.ts",
+        "minimal-substitution-map.ts",
         "substitution-map.ts",
     ],
     deps = [
@@ -93,6 +95,7 @@ npm_package_bin(
     tool = "@npm//@babel/cli/bin:babel",
     outs = [
         "lol/identity-substitution-map.js",
+        "lol/minimal-substitution-map.js",
         "lol/substitution-map.js"
     ],
     data = [

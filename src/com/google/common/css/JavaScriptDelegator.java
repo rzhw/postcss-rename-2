@@ -81,9 +81,25 @@ public class JavaScriptDelegator {
   }
 
   public String substitutionMapGet(String key) {
+    return executeObject("get", key).toString();
+  }
+
+  public void substitutionMapInitializableInitializeWithMappings(Map<? extends String, ? extends String> initialMappings) {
     try {
-      engine.put("key", key);
-      return engine.eval("delegatedMap.get(key)").toString();
+      engine.put("initialMappings", initialMappings);
+      engine.eval("(() => { const {Map} = require('immutable'); delegatedMap.initializeWithMappings(Map(initialMappings)) })()");
+    } catch (ScriptException e) {
+      if (e.getMessage().contains("value is null")) {
+        throw new NullPointerException();
+      }
+      throw new RuntimeException("Eval failed", e);
+    }
+  }
+
+  public Object executeObject(String method, Object ...args) {
+    try {
+      engine.put("args", args);
+      return engine.eval("delegatedMap." + method + ".apply(delegatedMap, args)");
     } catch (ScriptException e) {
       if (e.getMessage().contains("value is null")) {
         throw new NullPointerException();
@@ -109,6 +125,7 @@ public class JavaScriptDelegator {
 
       InputStream stream = loader.getResourceAsStream(resourcePath + "/" + name);
       if (stream == null) {
+        //System.out.println("couldn't find " + path);
         return null;
       }
 
@@ -116,6 +133,7 @@ public class JavaScriptDelegator {
 
       // Node.js requires shouldn't be using the Babel-generated format.
       result = result.replace("_interopRequireDefault(require(\"conditional\"))", "require('conditional')");
+      result = result.replace("_interopRequireDefault(require(\"immutable\"))", "require('immutable')");
 
       // The top level module needs to export itself in Node.js style, instead of what Babel generates.
       if (path.contains(mainImportName + ".js")) {
@@ -127,9 +145,16 @@ public class JavaScriptDelegator {
 
     @Override
     public Folder getFolder(String name) {
-      if (name.contains("node_modules") && getParent() == null) {
+      String path = resourcePath + "/" + name;
+      //System.out.println("Looking for " + path);
+
+      if (path.startsWith("com/google/common/css/lol/node_modules/conditional")) {
         return new DataFolder(
-                "external/npm/node_modules/conditional/node_modules/debug/node_modules/ms/node_modules", null, getPath() + name + "/", encoding);
+                "external/npm/node_modules/conditional/node_modules/debug/node_modules/ms/node_modules/conditional", this, getPath() + name + "/", encoding);
+      }
+      if (path.startsWith("com/google/common/css/lol/node_modules/immutable")) {
+        return new DataFolder(
+                "external/npm/node_modules/immutable", this, getPath() + name + "/", encoding);
       }
       return new DataFolder(
               resourcePath + "/" + name, this, getPath() + name + "/", encoding);
