@@ -145,12 +145,12 @@ public class JavaScriptDelegator {
       engine.put("delegatedMap", delegatedMap);
       engine.put("key", key);
       return (ValueWithMappings) engine.eval("(() => {" +
-        "const HashMap = Java.type('java.util.HashMap');" +
-        "const JavaValueWithMappings = Java.type('com.google.common.css.MultipleMappingSubstitutionMap.ValueWithMappings');" +
-        "const jsValueWithMappings = delegatedMap.getValueWithMappings(key);" +
-        "const map = new HashMap();" +
-        "jsValueWithMappings.mappings.forEach((value, key) => map.put(key, value));" +
-        "return new JavaValueWithMappings(jsValueWithMappings.value, map) })()");
+        "const HashMap = Java.type('java.util.HashMap');\n" +
+        "const JavaValueWithMappings = Java.type('com.google.common.css.MultipleMappingSubstitutionMap.ValueWithMappings');\n" +
+        "const jsValueWithMappings = delegatedMap.getValueWithMappings(key);\n" +
+        "const map = new HashMap();\n" +
+        "jsValueWithMappings.mappings.forEach((value, key) => map.put(key, value));\n" +
+        "return JavaValueWithMappings.createWithValueAndMappings(jsValueWithMappings.value, map) })()");
     } catch (ScriptException e) {
       if (e.getMessage().contains("value is null")) {
         throw new NullPointerException();
