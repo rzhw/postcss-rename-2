@@ -71,6 +71,7 @@ java_library(
     srcs = [
         "JavaScriptDelegator.java",
     ],
+    visibility = ["//visibility:public"],
     deps = [
         ":interfaces",
         "@maven//:com_coveo_nashorn_commonjs_modules",

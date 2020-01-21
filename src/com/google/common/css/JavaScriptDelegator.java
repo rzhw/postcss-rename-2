@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 
 public class JavaScriptDelegator {
 
-  public interface Delegating {
+  public interface Delegating extends SubstitutionMap {
     public Object getDelegatedJSObject();
   }
 
@@ -64,6 +64,46 @@ public class JavaScriptDelegator {
       } catch (ScriptException e) {
         throw new RuntimeException("Couldn't initialize nashorn-commonjs-modules", e);
       }
+    }
+  }
+
+  public JavaScriptDelegator(String getImpl) {
+    this("", "");
+    try {
+      String script = "(() => {" +
+              "function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { \"default\": obj }; }\n" +
+              "\n" +
+              "function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError(\"Cannot call a class as a function\"); } }\n" +
+              "\n" +
+              "function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if (\"value\" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }\n" +
+              "\n" +
+              "function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }\n" +
+              "\n" +
+              "var NewMap =\n" +
+              "/*#__PURE__*/\n" +
+              "function () {\n" +
+              "  function NewMap() {\n" +
+              "    _classCallCheck(this, NewMap);\n" +
+              "  }\n" +
+              "\n" +
+              "  _createClass(NewMap, [{\n" +
+              "    key: \"get\",\n" +
+              "    value: function get(key) {\n" +
+              "      " + getImpl + "\n" +
+              "    }\n" +
+              "  }]);\n" +
+              "\n" +
+              "  return NewMap;\n" +
+              "}();\n" +
+              "return new NewMap();\n" +
+              "})()";
+      //System.out.println(script);
+      delegatedMap = engine.eval(script);
+    } catch (ScriptException e) {
+      if (e.getMessage().contains("value is null")) {
+        throw new NullPointerException();
+      }
+      throw new RuntimeException("Eval failed", e);
     }
   }
 
