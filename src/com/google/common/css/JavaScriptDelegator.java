@@ -26,6 +26,11 @@ public class JavaScriptDelegator {
     System.setProperty("nashorn.args", "--language=es6");
     NashornScriptEngine engine = (NashornScriptEngine) new ScriptEngineManager().getEngineByName("nashorn");
     try {
+      engine.eval("console = { log: print, warn: print, error: print }");
+    } catch (ScriptException e) {
+      throw new RuntimeException("Couldn't initialize console", e);
+    }
+    try {
       Require.enable(engine, createRootFolder("com/google/common/css/lol", "UTF-8"));
     } catch (ScriptException e) {
       throw new RuntimeException("Couldn't initialize nashorn-commonjs-modules", e);
@@ -33,13 +38,42 @@ public class JavaScriptDelegator {
     this.engine = engine;
   }
 
-  public void initialize(Object ...args) {
+  public void initialize() {
     try {
-      engine.put("delegatedMapArgs", args);
-      engine.eval("const delegatedMap = (() => { const Map = require('./" + mainImportName + "'); return new (Map.bind.apply(Map, delegatedMapArgs)) })()");
+      engine.eval("const delegatedMap = (() => { const Map = require('./" + mainImportName + "'); return new Map() })()");
     } catch (ScriptException e) {
       throw new RuntimeException("Couldn't initialize " + mainModule, e);
-    };
+    }
+  }
+
+  public void initialize(Object arg1) {
+    try {
+      engine.put("arg1", arg1);
+      engine.eval("const delegatedMap = (() => { const Map = require('./" + mainImportName + "'); return new Map(Java.from(arg1)) })()");
+    } catch (ScriptException e) {
+      throw new RuntimeException("Couldn't initialize " + mainModule, e);
+    }
+  }
+
+  public void initialize(Object arg1, Object arg2) {
+    try {
+      engine.put("arg1", arg1);
+      engine.put("arg2", arg2);
+      engine.eval("const delegatedMap = (() => { const Map = require('./" + mainImportName + "'); return new Map(Java.from(arg1), Java.from(arg2)) })()");
+    } catch (ScriptException e) {
+      throw new RuntimeException("Couldn't initialize " + mainModule, e);
+    }
+  }
+
+  public void initialize(Object arg1, Object arg2, Object arg3) {
+    try {
+      engine.put("arg1", arg1);
+      engine.put("arg2", arg2);
+      engine.put("arg3", arg3);
+      engine.eval("const delegatedMap = (() => { const Map = require('./" + mainImportName + "'); return new Map(Java.from(arg1), Java.from(arg2), Java.from(arg3)) })()");
+    } catch (ScriptException e) {
+      throw new RuntimeException("Couldn't initialize " + mainModule, e);
+    }
   }
 
   public DataFolder createRootFolder(String path, String encoding) {
