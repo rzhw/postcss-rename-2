@@ -59,7 +59,7 @@ namespace MultipleMappingSubstitutionMap {
     }
 
     static createForSingleMapping(key: string, value: string) {
-      return new ValueWithMappings(value, ImmutableMap({key: value}));
+      return new ValueWithMappings(value, ImmutableMap([[key, value]]));
     }
   };
 }

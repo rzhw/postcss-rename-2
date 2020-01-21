@@ -37,7 +37,7 @@ export class SplittingSubstitutionMap implements
   }
 
   initializeWithMappings(newMappings: ImmutableMap<string, string>) {
-    if (!newMappings.size) {
+    if (newMappings.size) {
       (this.delegate as SubstitutionMap.Initializable).initializeWithMappings(newMappings);
     }
   }
