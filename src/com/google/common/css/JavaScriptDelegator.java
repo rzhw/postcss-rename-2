@@ -10,6 +10,7 @@ import javax.script.ScriptException;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class JavaScriptDelegator {
@@ -32,6 +33,15 @@ public class JavaScriptDelegator {
     this.engine = engine;
   }
 
+  public void initialize(Object ...args) {
+    try {
+      engine.put("delegatedMapArgs", args);
+      engine.eval("const delegatedMap = (() => { const Map = require('./" + mainImportName + "'); return new (Map.bind.apply(Map, delegatedMapArgs)) })()");
+    } catch (ScriptException e) {
+      throw new RuntimeException("Couldn't initialize " + mainModule, e);
+    };
+  }
+
   public DataFolder createRootFolder(String path, String encoding) {
     return new DataFolder(path, null, "/", encoding);
   }
@@ -39,7 +49,7 @@ public class JavaScriptDelegator {
   public String substitutionMapGet(String key) {
     try {
       engine.put("key", key);
-      return engine.eval("(() => { const Map = require('./" + mainImportName + "'); return new Map().get(key) })()").toString();
+      return engine.eval("delegatedMap.get(key)").toString();
     } catch (ScriptException e) {
       if (e.getMessage().contains("value is null")) {
         throw new NullPointerException();

@@ -25,6 +25,7 @@ public class IdentitySubstitutionMap implements SubstitutionMap {
 
   public IdentitySubstitutionMap() {
     delegator = new JavaScriptDelegator("IdentitySubstitutionMap", "identity-substitution-map");
+    delegator.initialize();
   }
 
   @Override
