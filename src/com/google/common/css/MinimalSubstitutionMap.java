@@ -37,7 +37,7 @@ public class MinimalSubstitutionMap implements SubstitutionMap.Initializable {
 
   public MinimalSubstitutionMap(Set<String> outputValueBlacklist) {
     delegator = new JavaScriptDelegator("MinimalSubstitutionMap", "minimal-substitution-map");
-    delegator.initialize(outputValueBlacklist);
+    delegator.initialize(null, null, outputValueBlacklist);
   }
 
   @VisibleForTesting

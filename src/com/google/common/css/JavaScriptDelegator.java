@@ -26,9 +26,28 @@ public class JavaScriptDelegator {
     System.setProperty("nashorn.args", "--language=es6");
     NashornScriptEngine engine = (NashornScriptEngine) new ScriptEngineManager().getEngineByName("nashorn");
     try {
+      // console doesn't exist.
       engine.eval("console = { log: print, warn: print, error: print }");
+
+      // Number.isInteger doesn't exist.
+      engine.eval("" +
+              "Number.isInteger = Number.isInteger || function(value) {\n" +
+              "  return typeof value === 'number' && \n" +
+              "    isFinite(value) && \n" +
+              "    Math.floor(value) === value;\n" +
+              "}");
+
+      // Map.prototype.get seems to be weird with Nashorn strings, so take advantage of the fact they're Java strings.
+      engine.eval("" +
+              "Map.prototype.get = (search) => {\n" +
+              "  let result = undefined;\n" +
+              "  this.forEach((k, v) => {\n" +
+              "    if (k.equals(search)) result = v;\n" +
+              "  });\n" +
+              "  return result;\n" +
+              "};");
     } catch (ScriptException e) {
-      throw new RuntimeException("Couldn't initialize console", e);
+      throw new RuntimeException("Couldn't initialize polyfills", e);
     }
     try {
       Require.enable(engine, createRootFolder("com/google/common/css/lol", "UTF-8"));
@@ -86,8 +105,12 @@ public class JavaScriptDelegator {
 
   public void substitutionMapInitializableInitializeWithMappings(Map<? extends String, ? extends String> initialMappings) {
     try {
+      // immutable.Map expects a JavaScript Object, so we need to pre-convert.
       engine.put("initialMappings", initialMappings);
-      engine.eval("(() => { const {Map} = require('immutable'); delegatedMap.initializeWithMappings(Map(initialMappings)) })()");
+      engine.eval("(() => {" +
+        "const immutable = require('immutable');" +
+        "const map = {}; for each (let i in initialMappings.keySet()) { map[i] = initialMappings.get(i) };" +
+        "delegatedMap.initializeWithMappings(immutable.Map(map)) })()");
     } catch (ScriptException e) {
       if (e.getMessage().contains("value is null")) {
         throw new NullPointerException();
