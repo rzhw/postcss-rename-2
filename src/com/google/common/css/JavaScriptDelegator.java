@@ -3,6 +3,7 @@ package com.google.common.css;
 import com.coveo.nashorn_modules.AbstractFolder;
 import com.coveo.nashorn_modules.Folder;
 import com.coveo.nashorn_modules.Require;
+import com.google.common.base.Predicate;
 import com.google.common.css.MultipleMappingSubstitutionMap.ValueWithMappings;
 import jdk.nashorn.api.scripting.NashornScriptEngine;
 
@@ -27,6 +28,7 @@ public class JavaScriptDelegator {
     put("identity-substitution-map.js", "IdentitySubstitutionMap");
     put("minimal-substitution-map.js", "MinimalSubstitutionMap");
     put("prefixing-substitution-map.js", "PrefixingSubstitutionMap");
+    put("recording-substitution-map.js", "RecordingSubstitutionMap");
     put("simple-substitution-map.js", "SimpleSubstitutionMap");
     put("splitting-substitution-map.js", "SplittingSubstitutionMap");
   }};
@@ -115,6 +117,36 @@ public class JavaScriptDelegator {
     }
   }
 
+  public Object initializeBuilder() {
+    try {
+      return engine.eval("(() => { const Map = require('./" + mainImportName + "'); return new Map.Builder() })()");
+    } catch (ScriptException e) {
+      if (e.getMessage().contains("value is null")) {
+        throw new NullPointerException();
+      }
+      throw new RuntimeException("Eval failed", e);
+    }
+  }
+
+  public void initializeBuilt(Object builtMap) {
+    delegatedMap = builtMap;
+  }
+
+  public Object recordingSubstitutionMapBuilderWithMappings(Object builder, Map<? extends String, ? extends String> m) {
+    try {
+      engine.put("delegatedMap", builder);
+      engine.put("initialMappings", m);
+      return engine.eval("(() => {" +
+              "const map = new Map(); for each (let i in initialMappings.keySet()) { map.set(i, initialMappings.get(i)) };" +
+              "return delegatedMap.withMappings(map) })()");
+    } catch (ScriptException e) {
+      if (e.getMessage().contains("value is null")) {
+        throw new NullPointerException();
+      }
+      throw new RuntimeException("Eval failed", e);
+    }
+  }
+
   public DataFolder createRootFolder(String path, String encoding) {
     return new DataFolder(path, null, "/", encoding);
   }
@@ -172,6 +204,51 @@ public class JavaScriptDelegator {
     }
   }
 
+  public Object executeOnObject(Object object, String method, Object ...args) {
+    try {
+      engine.put("myObject", object);
+      engine.put("args", args);
+      return engine.eval("myObject." + method + ".apply(myObject, args)");
+    } catch (ScriptException e) {
+      if (e.getMessage().contains("value is null")) {
+        throw new NullPointerException();
+      }
+      throw new RuntimeException("Eval failed", e);
+    }
+  }
+
+  public Map<String, String> executeMap(String method) {
+    Object result;
+    try {
+      engine.put("delegatedMap", delegatedMap);
+      result = engine.eval("(() => {" +
+              "const LinkedHashMap = Java.type('java.util.LinkedHashMap');\n" +
+              "const JavaValueWithMappings = Java.type('com.google.common.css.MultipleMappingSubstitutionMap.ValueWithMappings');\n" +
+              "const jsMap = delegatedMap." + method + "();\n" +
+              "const javaMap = new LinkedHashMap();\n" +
+              "jsMap.forEach((value, key) => javaMap.put(key, value));\n" +
+              "return javaMap })()");
+    } catch (ScriptException e) {
+      if (e.getMessage().contains("value is null")) {
+        throw new NullPointerException();
+      }
+      throw new RuntimeException("Eval failed", e);
+    }
+    return (Map<String, String>) result;
+  }
+
+  public Object wrapPredicate(Predicate predicate) {
+    try {
+      engine.put("predicate", predicate);
+      return engine.eval("(() => { const p = predicate; return (input) => p.apply(input) })()");
+    } catch (ScriptException e) {
+      if (e.getMessage().contains("value is null")) {
+        throw new NullPointerException();
+      }
+      throw new RuntimeException("Eval failed", e);
+    }
+  }
+
   private class DataFolder extends AbstractFolder {
 
     private ClassLoader loader;
@@ -216,6 +293,7 @@ public class JavaScriptDelegator {
       result = result.replace("_interopRequireDefault(require(\"./guavajs-wrapper\"))", "require('./guavajs-wrapper')");
       result = result.replace("_interopRequireDefault(require(\"conditional\"))", "require('conditional')");
       result = result.replace("_interopRequireDefault(require(\"immutable\"))", "require('immutable')");
+      result = result.replace("_identitySubstitutionMap.IdentitySubstitutionMap", "_identitySubstitutionMap");
 
       // The top level module needs to export itself in Node.js style, instead of what Babel generates.
       Optional<String> anyMatch = myMap.keySet().stream().filter(x -> path.endsWith("/" + x)).findFirst();
