@@ -145,10 +145,10 @@ public class JavaScriptDelegator {
       engine.put("delegatedMap", delegatedMap);
       engine.put("key", key);
       return (ValueWithMappings) engine.eval("(() => {" +
-        "const HashMap = Java.type('java.util.HashMap');\n" +
+        "const LinkedHashMap = Java.type('java.util.LinkedHashMap');\n" +
         "const JavaValueWithMappings = Java.type('com.google.common.css.MultipleMappingSubstitutionMap.ValueWithMappings');\n" +
         "const jsValueWithMappings = delegatedMap.getValueWithMappings(key);\n" +
-        "const map = new HashMap();\n" +
+        "const map = new LinkedHashMap();\n" +
         "jsValueWithMappings.mappings.forEach((value, key) => map.put(key, value));\n" +
         "return JavaValueWithMappings.createWithValueAndMappings(jsValueWithMappings.value, map) })()");
     } catch (ScriptException e) {
