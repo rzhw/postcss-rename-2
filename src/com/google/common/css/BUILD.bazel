@@ -29,7 +29,6 @@ java_library(
         "JobDescriptionBuilder.java",
         "Locatable.java",
         "MinimalSubstitutionMap.java",
-        "MultipleMappingSubstitutionMap.java",
         "OutputRenamingMapFormat.java",
         "PrefixingSubstitutionMap.java",
         "RecordingSubstitutionMap.java",
@@ -41,16 +40,28 @@ java_library(
         "SourceCodeLocation.java",
         "SourceCodeLocationBuilder.java",
         "SplittingSubstitutionMap.java",
-        "SubstitutionMap.java",
         "SubstitutionMapProvider.java",
         "Vendor.java",
     ],
     visibility = ["//visibility:public"],
     deps = [
+        ":interfaces",
         ":js_support",
         "@maven//:com_google_auto_value_auto_value",
         "@maven//:com_google_code_findbugs_jsr305",
         "@maven//:com_google_code_gson_gson",
+        "@maven//:com_google_guava_guava",
+    ],
+)
+
+java_library(
+    name = "interfaces",
+    srcs = [
+        "MultipleMappingSubstitutionMap.java",
+        "SubstitutionMap.java",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
         "@maven//:com_google_guava_guava",
     ],
 )
@@ -61,6 +72,7 @@ java_library(
         "JavaScriptDelegator.java",
     ],
     deps = [
+        ":interfaces",
         "@maven//:com_coveo_nashorn_commonjs_modules",
     ],
     resources = [
