@@ -19,7 +19,7 @@ package com.google.common.css;
 /**
  * Wrapper around JavaScript version of IdentitySubstitutionMap.
  */
-public class IdentitySubstitutionMap implements SubstitutionMap {
+public class IdentitySubstitutionMap implements SubstitutionMap, JavaScriptDelegator.Delegating {
 
   JavaScriptDelegator delegator;
 
@@ -31,5 +31,10 @@ public class IdentitySubstitutionMap implements SubstitutionMap {
   @Override
   public String get(String key) {
     return delegator.substitutionMapGet(key);
+  }
+
+  @Override
+  public Object getDelegatedJSObject() {
+    return delegator.delegatedMap;
   }
 }

@@ -11,16 +11,27 @@ import javax.script.ScriptException;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class JavaScriptDelegator {
 
+  public interface Delegating {
+    public Object getDelegatedJSObject();
+  }
+
+  Map<String, String> myMap = new HashMap<String, String>() {{
+    put("identity-substitution-map.js", "IdentitySubstitutionMap");
+    put("minimal-substitution-map.js", "MinimalSubstitutionMap");
+    put("prefixing-substitution-map.js", "PrefixingSubstitutionMap");
+    put("simple-substitution-map.js", "SimpleSubstitutionMap");
+    put("splitting-substitution-map.js", "SplittingSubstitutionMap");
+  }};
+
   private static NashornScriptEngine engine;
   private String mainModule;
   private String mainImportName;
-  private Object delegatedMap;
+  public Object delegatedMap;
 
   public JavaScriptDelegator(String mainModule, String mainImportName) {
     this.mainModule = mainModule;
@@ -62,7 +73,11 @@ public class JavaScriptDelegator {
   public void initialize(Object arg1) {
     try {
       engine.put("arg1", arg1);
-      delegatedMap = engine.eval("(() => { const Map = require('./" + mainImportName + "'); return new Map(Java.from(arg1)) })()");
+      String arg1Import = "arg1";
+      if (arg1 instanceof List) {
+        arg1Import = "Java.from(arg1)";
+      }
+      delegatedMap = engine.eval("(() => { const TheMap = require('./" + mainImportName + "'); return new TheMap("+arg1Import+") })()");
     } catch (ScriptException e) {
       throw new RuntimeException("Couldn't initialize " + mainModule, e);
     }
@@ -160,6 +175,14 @@ public class JavaScriptDelegator {
     private String resourcePath;
     private String encoding;
 
+    private String getResource(String path) {
+      InputStream stream = loader.getResourceAsStream(path);
+      if (stream == null) {
+        return null;
+      }
+      return new BufferedReader(new InputStreamReader(stream)).lines().collect(Collectors.joining("\n"));
+    }
+
     @Override
     public String getFile(String name) {
       String path = resourcePath + "/" + name;
@@ -171,19 +194,20 @@ public class JavaScriptDelegator {
 
       InputStream stream = loader.getResourceAsStream(resourcePath + "/" + name);
       if (stream == null) {
+      String result = getResource(path);
+      if (result == null) {
         //System.out.println("couldn't find " + path);
         return null;
       }
-
-      String result = new BufferedReader(new InputStreamReader(stream)).lines().collect(Collectors.joining("\n"));
 
       // Node.js requires shouldn't be using the Babel-generated format.
       result = result.replace("_interopRequireDefault(require(\"conditional\"))", "require('conditional')");
       result = result.replace("_interopRequireDefault(require(\"immutable\"))", "require('immutable')");
 
       // The top level module needs to export itself in Node.js style, instead of what Babel generates.
-      if (path.contains(mainImportName + ".js")) {
-        result += "\nmodule.exports = " + mainModule + ";";
+      Optional<String> anyMatch = myMap.keySet().stream().filter(x -> path.endsWith("/" + x)).findFirst();
+      if (anyMatch.isPresent()) {
+        result += "\nmodule.exports = " + myMap.get(anyMatch.get()) + ";";
       }
 
       return result;

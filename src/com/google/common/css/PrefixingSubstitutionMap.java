@@ -24,16 +24,17 @@ import java.util.Map;
  *
  */
 public class PrefixingSubstitutionMap
-    implements MultipleMappingSubstitutionMap, SubstitutionMap.Initializable {
-  private final SubstitutionMap delegate;
-  private final String prefix;
+    implements MultipleMappingSubstitutionMap, SubstitutionMap.Initializable, JavaScriptDelegator.Delegating {
   JavaScriptDelegator delegator;
 
   public PrefixingSubstitutionMap(SubstitutionMap delegate, String prefix) {
-    this.delegate = delegate;
-    this.prefix = prefix;
     delegator = new JavaScriptDelegator("PrefixingSubstitutionMap", "prefixing-substitution-map");
-    delegator.initialize(delegate, prefix);
+
+    if (delegate instanceof JavaScriptDelegator.Delegating) {
+      delegator.initialize(((JavaScriptDelegator.Delegating) delegate).getDelegatedJSObject(), prefix);
+    } else {
+      throw new RuntimeException("Delegate must be implemented in JavaScript");
+    }
   }
 
   @Override
@@ -49,5 +50,10 @@ public class PrefixingSubstitutionMap
   @Override
   public ValueWithMappings getValueWithMappings(String key) {
     return delegator.multipleMappingSubstitutionMapGetValueWithMappings(key);
+  }
+
+  @Override
+  public Object getDelegatedJSObject() {
+    return delegator.delegatedMap;
   }
 }

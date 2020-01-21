@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 /**
  * Wrapper around JavaScript version of MinimalSubstitutionMap.
  */
-public class MinimalSubstitutionMap implements SubstitutionMap.Initializable {
+public class MinimalSubstitutionMap implements SubstitutionMap.Initializable, JavaScriptDelegator.Delegating {
 
   JavaScriptDelegator delegator;
 
@@ -70,5 +70,10 @@ public class MinimalSubstitutionMap implements SubstitutionMap.Initializable {
   @VisibleForTesting
   String toShortString(int index) {
     return delegator.executeObject("toShortString", index).toString();
+  }
+
+  @Override
+  public Object getDelegatedJSObject() {
+    return delegator.delegatedMap;
   }
 }
