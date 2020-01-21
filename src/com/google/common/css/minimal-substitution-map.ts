@@ -123,7 +123,7 @@ export class MinimalSubstitutionMap implements SubstitutionMap.Initializable {
     Preconditions.checkState(this.renamedCssClasses.size === 0);
     this.outputValueBlacklist =
         ImmutableSet(this.outputValueBlacklist).union(m.values());
-    m.forEach((key, value) => this.renamedCssClasses.set(key, value));
+    m.forEach((value, key) => this.renamedCssClasses.set(key, value));
   }
 
   /**

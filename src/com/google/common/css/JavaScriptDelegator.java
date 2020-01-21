@@ -36,16 +36,6 @@ public class JavaScriptDelegator {
               "    isFinite(value) && \n" +
               "    Math.floor(value) === value;\n" +
               "}");
-
-      // Map.prototype.get seems to be weird with Nashorn strings, so take advantage of the fact they're Java strings.
-      engine.eval("" +
-              "Map.prototype.get = (search) => {\n" +
-              "  let result = undefined;\n" +
-              "  this.forEach((k, v) => {\n" +
-              "    if (k.equals(search)) result = v;\n" +
-              "  });\n" +
-              "  return result;\n" +
-              "};");
     } catch (ScriptException e) {
       throw new RuntimeException("Couldn't initialize polyfills", e);
     }
